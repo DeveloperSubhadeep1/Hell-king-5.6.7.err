@@ -34,7 +34,7 @@ MELCOW_VID = environ.get("MELCOW_VID", "https://graph.org/file/60e8a622b14796e44
 SPELL_IMG = environ.get("SPELL_IMG", "https://graph.org/file/13702ae26fb05df52667c.jpg")
 SUBSCRIPTION = (environ.get('SUBSCRIPTION', 'https://graph.org/file/242b7f1b52743938d81f1.jpg'))
 FSUB_PICS = (environ.get('FSUB_PICS', 'https://graph.org/file/7478ff3eac37f4329c3d8.jpg https://graph.org/file/56b5deb73f3b132e2bb73.jpg')).split()  # Fsub pic
-
+DAILY_LIMIT = int(environ.get("DAILY_LIMIT", "50")) 
 # ============================
 # Admin, Channels & Users Configuration
 # ============================
