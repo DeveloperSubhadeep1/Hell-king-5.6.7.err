@@ -34,7 +34,7 @@ MELCOW_VID = environ.get("MELCOW_VID", "https://graph.org/file/60e8a622b14796e44
 SPELL_IMG = environ.get("SPELL_IMG", "https://graph.org/file/13702ae26fb05df52667c.jpg")
 SUBSCRIPTION = (environ.get('SUBSCRIPTION', 'https://graph.org/file/242b7f1b52743938d81f1.jpg'))
 FSUB_PICS = (environ.get('FSUB_PICS', 'https://graph.org/file/7478ff3eac37f4329c3d8.jpg https://graph.org/file/56b5deb73f3b132e2bb73.jpg')).split()  # Fsub pic
-DAILY_LIMIT = int(environ.get("DAILY_LIMIT", "50")) 
+DAILY_LIMIT = int(environ.get("DAILY_LIMIT", "20")) 
 # ============================
 # Admin, Channels & Users Configuration
 # ============================
@@ -61,10 +61,10 @@ OWNER_UPI_ID = environ.get('OWNER_UPI_ID', 'subhadeepsamui2006@okaxis')
 # ============================
 # MongoDB Configuration
 # ============================
-DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://devildevil:devildevil@cluster0.0hajx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
-DATABASE_URI2 = environ.get('DATABASE_URI2', "mongodb+srv://hhhkkkbbb:devils21@cluster0.xuqky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://hellking1:hellking1@cluster0.zqg7rco.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+DATABASE_URI2 = environ.get('DATABASE_URI2', "mongodb+srv://hellking2:hellking2@cluster0.u3ibvlt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 DATABASE_NAME = environ.get('DATABASE_NAME', "cluster0")
-COLLECTION_NAME = environ.get('COLLECTION_NAME', 'Deendayal_files')
+COLLECTION_NAME = environ.get('COLLECTION_NAME', 'hellking_files')
 
 # ============================
 # Movie Notification & Update Settings
