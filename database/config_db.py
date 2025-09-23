@@ -219,7 +219,7 @@ class Database:
     async def delete_all_messages(self):
             await self.col.update_many(
                 {}, 
-                {"$unset": {"messages": ""}}
+                {"$unset": {"messages": ""}})
 
     def create_configuration_data(
             self, maintenance_mode=False,
