@@ -222,7 +222,8 @@ commands = [
 • /get_premium - <code>ɢᴇᴛ ɪɴꜰᴏ ᴏꜰ ᴀɴʏ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀ.</code>
 • /restart - <code>ʀᴇꜱᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ.</code>
 • /sendall_mode - <code> To On/Off Send all button.</code>
-• /watch_online_mode - <code>ᴡᴀᴛᴄʜ ᴍᴏᴅᴇ ᴏɴ/ᴏꜰꜰ.</code>"""
+• /watch_online_mode - <code>ᴡᴀᴛᴄʜ ᴍᴏᴅᴇ ᴏɴ/ᴏꜰꜰ.</code>
+• /del_topsearch - <code>ᴅᴇʟᴇᴛᴇ ᴛʜᴇ ᴀʟʟ ᴛᴏᴘ ꜱᴇᴀʀᴄʜᴇꜱ.</code>"""
 ]
 
 # ============================
