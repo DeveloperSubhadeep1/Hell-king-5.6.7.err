@@ -160,8 +160,8 @@ Nᴀᴍᴇ - {}
 • /remove_premium - <code>ʀᴇᴍᴏᴠᴇ ᴀɴʏ ᴜꜱᴇʀ ꜰʀᴏᴍ ᴘʀᴇᴍɪᴜᴍ.</code>
 • /premium_users - <code>ɢᴇᴛ ʟɪꜱᴛ ᴏꜰ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ.</code>
 • /get_premium - <code>ɢᴇᴛ ɪɴꜰᴏ ᴏꜰ ᴀɴʏ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀ.</code>
-• /restart - <code>ʀᴇꜱᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ.</code>"""      
-
+• /restart - <code>ʀᴇꜱᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ.</code>   
+• /del_topsearch - <code>ᴅᴇʟᴇᴛᴇ ᴛʜᴇ ᴀʟʟ ᴛᴏᴘ ꜱᴇᴀʀᴄʜᴇꜱ.</code>"""      
     
     GROUP_TXT = """👋 ʜᴇʏ {},
 
