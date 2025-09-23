@@ -217,7 +217,9 @@ class Database:
         return [result['_id'] for result in results]
     
     async def delete_all_messages(self):
-        await self.col.delete_many({})
+            await self.col.update_many(
+                {}, 
+                {"$unset": {"messages": ""}}
 
     def create_configuration_data(
             self, maintenance_mode=False,
