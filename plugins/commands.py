@@ -3119,3 +3119,36 @@ async def set_watch_online_mode(client, message):
     except Exception as e:
         logger.error(f"Error in set_watch_online_mode: {e}")
         await message.reply_text(f"<b>❗️ An error occurred while setting the mode.</b>")
+
+
+
+
+
+@Client.on_message(filters.command("del_topsearch") & filters.user(ADMINS))
+async def delete_top_searches(client, message):
+    keyboard = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("✅ Yes, delete", callback_data="confirm_delete")],
+            [InlineKeyboardButton("❌ Cancel", callback_data="cancel_delete")]
+        ]
+    )
+    await message.reply_text(
+        "<b>⚠️ Are you sure you want to delete all top search data?</b>",
+        reply_markup=keyboard
+    )
+
+# Step 2: Handle button clicks
+@Client.on_callback_query(filters.regex("confirm_delete|cancel_delete") & filters.user(ADMINS))
+async def confirm_delete_callback(client, callback_query):
+    if callback_query.data == "confirm_delete":
+        try:
+            await mdb.delete_all_messages()
+            await callback_query.message.edit_text("<b>✅ Top searching data successfully deleted.</b>")
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
+            await callback_query.message.edit_text("<b>✅ Top searching data successfully deleted.</b>")
+        except Exception as e:
+            await callback_query.message.edit_text(f"<b>❗️ An error occurred while deleting the data.</b>\n`{e}`")
+    else:
+        await callback_query.message.edit_text("<b>❌ Deletion canceled.</b>")
+    await callback_query.answer()
