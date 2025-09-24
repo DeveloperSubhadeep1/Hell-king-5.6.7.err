@@ -304,20 +304,22 @@ async def send_msg(bot, filename, caption, file_size):
 
 
             genre_list = genres.split(',')
-                        genre_hashtags = []
-                        for genre in genre_list:
-                            # Remove leading/trailing whitespace and convert to lowercase
-                            clean_genre = genre.strip().lower()
-                            if clean_genre and clean_genre != 'n/a':
-                                # Replace spaces with underscores and add a hashtag
-                                hashtag = f"#{clean_genre.replace(' ', '_')}"
-                                genre_hashtags.append(hashtag)
-            
-                        # Limit to a maximum of 6 hashtags
-                        limited_genre_hashtags = genre_hashtags[:6]
-            
-                        # Join the limited list of hashtags into a single string
-                        genres_to_display = ", ".join(limited_genre_hashtags)
+            genre_hashtags = []
+            for genre in genre_list:
+                # Remove leading/trailing whitespace and convert to lowercase
+                clean_genre = genre.strip().lower()
+                if clean_genre and clean_genre != 'n/a':
+                    # Replace spaces with underscores and add a hashtag
+                    hashtag = f"#{clean_genre.replace(' ', '_')}"
+                    genre_hashtags.append(hashtag)
+
+            # Limit to a maximum of 6 hashtags
+            limited_genre_hashtags = genre_hashtags[:6]
+
+            # Join the limited list of hashtags into a single string
+            genres_to_display = ", ".join(limited_genre_hashtags) if limited_genre_hashtags else "N/A"
+
+
 
             # Existing hashtag for the file kind
             hashtag = f"#{kind_raw.upper().replace(' ', '_')}"
