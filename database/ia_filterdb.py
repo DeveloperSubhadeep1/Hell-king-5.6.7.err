@@ -294,7 +294,7 @@ async def send_msg(bot, filename, caption, file_size):
             clean_title = re.sub(r'\s+', ' ', re.sub(r'[^a-zA-Z0-9 ]', '', title.replace("_", " ").replace("-", " ").replace(".", " "))).strip()
 
 
-            movie_name_hashtag = f"#{clean_title}"
+            movie_name_hashtag = f"#{clean_title.replace(' ', '')}"
             #movie_name_hashtag = f"#{title.strip().replace(' ', '').replace('-', '').replace('.', '').replace('_', '').replace(',', '').replace(';', '').replace(':', '')}"
             
             genres = imdb.get('genres', 'N/A') if imdb else 'N/A'
@@ -304,17 +304,20 @@ async def send_msg(bot, filename, caption, file_size):
 
 
             genre_list = genres.split(',')
-            genre_hashtags = []
-            for genre in genre_list:
-                # Remove leading/trailing whitespace and convert to lowercase
-                clean_genre = genre.strip().lower()
-                if clean_genre and clean_genre != 'n/a':
-                    # Replace spaces with underscores and add a hashtag
-                    hashtag = f"#{clean_genre.replace(' ', '_')}"
-                    genre_hashtags.append(hashtag)
-
-            # Join the list of hashtags into a single string
-            genres_to_display = ", ".join(genre_hashtags) if genre_hashtags else "N/A"
+                        genre_hashtags = []
+                        for genre in genre_list:
+                            # Remove leading/trailing whitespace and convert to lowercase
+                            clean_genre = genre.strip().lower()
+                            if clean_genre and clean_genre != 'n/a':
+                                # Replace spaces with underscores and add a hashtag
+                                hashtag = f"#{clean_genre.replace(' ', '_')}"
+                                genre_hashtags.append(hashtag)
+            
+                        # Limit to a maximum of 6 hashtags
+                        limited_genre_hashtags = genre_hashtags[:6]
+            
+                        # Join the limited list of hashtags into a single string
+                        genres_to_display = ", ".join(limited_genre_hashtags)
 
             # Existing hashtag for the file kind
             hashtag = f"#{kind_raw.upper().replace(' ', '_')}"
@@ -327,7 +330,7 @@ async def send_msg(bot, filename, caption, file_size):
 
             # নতুন ফরম্যাট অনুযায়ী টেক্সট তৈরি
             text_template = (
-                "#𝑵𝒆𝒘_𝑭𝒊𝒍𝒆_𝑨𝒅𝒅𝒆𝒅 ✅\n\n😈 `{title} {year}` ⿻ |\n\n🎭 ɢᴇɴʀᴇs : {genre_hashtags_text}\n\n📽 ғᴏʀᴍᴀᴛ: {quality}\n🔊 ᴀᴜᴅɪᴏ: {language}\n\n{hashtag}\n\n𝖴𝗉𝗅𝗈𝖺𝖽𝖾𝖽 𝖡𝗒 - @Hell_king_69_Bot\n\n🕒 {timestamp}\n\n#️⃣ {movie_name_hashtag}\n\n<blockquote>ᴄᴏᴘʏ ᴛʜᴇ ɴᴀᴍᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ <b>ꜱᴇᴀʀᴄʜ ʜᴇʀᴇ</b>\nʙᴜᴛᴛᴏɴ ᴀɴᴅ ᴘᴇꜱᴛ ᴛʜᴇ ɴᴀᴍᴇ ᴀᴛ ɢʀᴏᴜᴘ</blockquote>")
+                "#𝑵𝒆𝒘_𝑭𝒊𝒍𝒆_𝑨𝒅𝒅𝒆𝒅 ✅\n\n😈 `{title} {year}` ⿻ \n\n🎭 ɢᴇɴʀᴇs : {genre_hashtags_text}\n\n📽 ғᴏʀᴍᴀᴛ: {quality}\n🔊 ᴀᴜᴅɪᴏ: {language}\n\n{hashtag}\n\n𝖴𝗉𝗅𝗈𝖺𝖽𝖾𝖽 𝖡𝗒 - @Hell_king_69_Bot\n\n🕒 {timestamp}\n\n#️⃣ {movie_name_hashtag}\n\n<blockquote>ᴄᴏᴘʏ ᴛʜᴇ ɴᴀᴍᴇ ᴀɴᴅ ᴄʟɪᴄᴋ ᴏɴ <b>ꜱᴇᴀʀᴄʜ ʜᴇʀᴇ</b>\nʙᴜᴛᴛᴏɴ ᴀɴᴅ ᴘᴇꜱᴛ ᴛʜᴇ ɴᴀᴍᴇ ᴀᴛ ɢʀᴏᴜᴘ</blockquote>")
             
             text = text_template.format(
                 title=title,
