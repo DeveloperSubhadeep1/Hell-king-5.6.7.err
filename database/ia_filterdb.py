@@ -290,7 +290,9 @@ async def send_msg(bot, filename, caption, file_size):
             # IMDb থেকে ডেটা সংগ্রহ
             title = imdb.get('title', filename) if imdb else filename
             year = imdb.get('year', '') if imdb else ''
-            clean_title = re.sub(r'[^a-zA-Z0-9]', '', title)
+            # clean_title = re.sub(r'[^a-zA-Z0-9]', '', title)
+            clean_title = re.sub(r'\s+', ' ', re.sub(r'[^a-zA-Z0-9 ]', '', title.replace("_", " ").replace("-", " ").replace(".", " "))).strip()
+
 
             movie_name_hashtag = f"#{clean_title}"
             #movie_name_hashtag = f"#{title.strip().replace(' ', '').replace('-', '').replace('.', '').replace('_', '').replace(',', '').replace(';', '').replace(':', '')}"
