@@ -30,7 +30,7 @@ USE_CAPTION_FILTER = bool(environ.get('USE_CAPTION_FILTER', True))
 
 PICS = (environ.get('PICS', 'https://telegra.ph/file/e6b5c785f612feb5f5634.jpg https://telegra.ph/file/d6c5cfc40324bddf0f34f.jpg https://telegra.ph/file/0ad1e20c4d0179d2cb06c.jpg https://telegra.ph/file/42bef6744682c9108a510.jpg https://telegra.ph/file/eb40dba65af97f14fd1e6.jpg https://telegra.ph/file/641e8cc0219b7271aba6c.jpg https://telegra.ph/file/ecd98ffadef33afba7f7a.jpg https://telegra.ph/file/c5efffc0fd807acd6bdb3.jpg')).split()  # Sample pic
 NOR_IMG = environ.get("NOR_IMG", "https://graph.org/file/e20b5fdaf217252964202.jpg")
-MELCOW_VID = environ.get("MELCOW_VID", "https://graph.org/file/60e8a622b14796e4448ce.mp4")
+MELCOW_VID = environ.get("MELCOW_VID", "https://envs.sh/G1j.mp4")
 SPELL_IMG = environ.get("SPELL_IMG", "https://graph.org/file/13702ae26fb05df52667c.jpg")
 SUBSCRIPTION = (environ.get('SUBSCRIPTION', 'https://graph.org/file/242b7f1b52743938d81f1.jpg'))
 FSUB_PICS = (environ.get('FSUB_PICS', 'https://graph.org/file/7478ff3eac37f4329c3d8.jpg https://graph.org/file/56b5deb73f3b132e2bb73.jpg')).split()  # Fsub pic
