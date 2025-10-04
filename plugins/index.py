@@ -185,6 +185,8 @@
 
 import logging
 import asyncio
+import time
+from math import ceil # NEW: Added for batch calculation
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait
 from pyrogram.errors.exceptions.bad_request_400 import ChannelInvalid, ChatAdminRequired, UsernameInvalid, UsernameNotModified
@@ -192,32 +194,24 @@ from info import ADMINS, INDEX_REQ_CHANNEL as LOG_CHANNEL
 from database.ia_filterdb import save_file # Assuming this function exists and works
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import re
-import time
 from utils import temp, get_readable_time # Assuming 'temp' is a storage object like a dict or class with attributes 'CURRENT' and 'CANCEL'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 lock = asyncio.Lock()
 
-# --- Utility Function for Progress Bar ---
+# --- Utility Function for Progress Bar (Updated to use Emojis) ---
 
-def progress_bar(current, total):
-    """Generates a text-based progress bar."""
-    if total <= 0:
-        return "`[....................]` 0.0%"
+def get_progress_bar(percent, length=10):
+    """Creates an emoji-based progress bar."""
+    if percent < 0:
+        percent = 0
+    elif percent > 100:
+        percent = 100
         
-    # Bar length fixed to 20 characters
-    bar_length = 20
-    # Calculate percentage
-    percent = current / total
-    # Calculate filled length
-    filled_length = int(bar_length * percent)
-    
-    # Create the bar string using blocks and dots
-    bar = '█' * filled_length + '░' * (bar_length - filled_length)
-    
-    # Return formatted string with percentage
-    return f"`[{bar}]` {percent:.1%}"
+    filled = int(length * percent / 100)
+    unfilled = length - filled
+    return '🟩' * filled + '⬜️' * unfilled
 
 
 # --- Callback Query Handler ---
@@ -246,7 +240,7 @@ async def index_files(bot, query):
             await bot.send_message(
                 int(from_user),
                 f'Your submission for indexing `{chat}` has been declined by the moderators.',
-                reply_to_message_id=int(lst_msg_id) # Use lst_msg_id as it often refers to the *user's original request message ID*
+                reply_to_message_id=int(lst_msg_id)
             )
         except Exception as e:
             logger.warning(f"Failed to notify user {from_user} about rejection: {e}")
@@ -260,7 +254,7 @@ async def index_files(bot, query):
     msg = query.message
     await query.answer('Starting Indexing process...⏳', show_alert=True)
 
-    # Notify the requesting user if they are not an Admin (Admins are self-notified via the bot response)
+    # Notify the requesting user if they are not an Admin
     if int(from_user) not in ADMINS:
         try:
             await bot.send_message(
@@ -406,7 +400,7 @@ async def set_skip_number(bot, message):
     else:
         await message.reply(f"Please specify a skip number.\nCurrent skip is: `{temp.CURRENT}`\nUsage: `/setskip 1000`", parse_mode=enums.ParseMode.MARKDOWN)
 
-# --- Core Indexing Logic ---
+# --- Core Indexing Logic (Updated for Batch Processing and ETA) ---
 
 async def index_files_to_db(lst_msg_id, chat, msg, bot):
     """The main function to iterate through a chat and save media to the database."""
@@ -416,134 +410,189 @@ async def index_files_to_db(lst_msg_id, chat, msg, bot):
     deleted = 0
     no_media = 0
     unsupported = 0
-    current_msg_count = 0 # Messages processed since the start of this index run
-    
-    # The starting message ID is the last message ID the user requested.
-    start_id = lst_msg_id
-    
-    # NEW: Check if the start ID is less than or equal to the skip point.
-    if start_id <= temp.CURRENT:
-        await msg.edit_text(
-            f"**Indexing Failed!** 🚫\n\nThe starting Message ID (`{start_id}`) is lower than or equal to the current global SKIP number (`{temp.CURRENT}`).\n\nPlease use the `/setskip 0` command to reset the skip number, or provide a link with a higher message ID.",
-            parse_mode=enums.ParseMode.MARKDOWN
-        )
-        return
-    
-    # Calculate approximate total messages to index. 
-    # This assumes sequential IDs, which is why it's an "approximate" total.
-    total_to_index = start_id - temp.CURRENT 
-    
+    BATCH_SIZE = 200 # Set a constant batch size
     start_time = time.time()
     
+    current = temp.CURRENT # Use a local var for the skip point
+    start_id = lst_msg_id
+
     async with lock:
         try:
             temp.CANCEL = False
             
-            async for message in bot.iter_messages(chat, offset=start_id, reverse=True):
-                
-                # Check for cancellation requested by the user
+            # CRITICAL CHECK: Ensure start ID is greater than the skip point
+            if start_id <= current:
+                await msg.edit_text(
+                    f"**Indexing Failed!** 🚫\n\nThe starting Message ID (`{start_id}`) is lower than or equal to the current global SKIP number (`{current}`).\n\nUse `/setskip 0` to reset the skip number, or provide a link with a higher message ID.",
+                    parse_mode=enums.ParseMode.MARKDOWN
+                )
+                return
+
+            total_fetch = start_id - current # Total number of IDs to process
+            total_messages_processed = 0
+            
+            # The batches need to iterate backwards from lst_msg_id down to current + 1
+            # We determine the number of batches required for this range.
+            batches = ceil(total_fetch / BATCH_SIZE)
+            batch_times = []
+            
+            await msg.edit(
+                f"📊 Indexing Starting......\n"
+                f"💬 Total Message IDs to cover: <code>{total_fetch}</code>\n"
+                f"📦 Batches to Process: <code>{batches}</code>\n"
+                f"⏰ Elapsed: <code>{get_readable_time(time.time() - start_time)}</code>",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('Cancel', callback_data='index_cancel')]]),
+                parse_mode=enums.ParseMode.HTML
+            )
+            
+            # Iterate through the batches
+            for batch in range(batches):
                 if temp.CANCEL:
                     break
-                
-                # Stop if we hit the manually set skip point
-                if message.id <= temp.CURRENT:
-                    logger.info(f"Reached skip point: {temp.CURRENT}")
-                    break
-                
-                current_msg_count += 1
-                
-                # Update status message every 80 messages
-                if current_msg_count % 80 == 0:
-                    elapsed = time.time() - start_time
-                    speed = current_msg_count / elapsed
                     
-                    # Generate progress bar
-                    bar = progress_bar(current_msg_count, total_to_index)
-
-                    update_text = (
-                        f"**Indexing Status**\n"
-                        f"{bar}\n\n"
-                        f"Time: `{get_readable_time(elapsed)}` | Speed: `{speed:.2f} msg/s`\n"
-                        f"Total messages fetched: `{current_msg_count}` (Up to ID: `{message.id}`)\n"
-                        f"Approx. Total to Index: `{total_to_index}`\n"
-                        f"Files Saved: `{total_files}`\n"
-                        f"Skipped:\n"
-                        f"  - Duplicate: `{duplicate}`\n"
-                        f"  - Deleted: `{deleted}`\n"
-                        f"  - No/Unsupported Media: `{no_media + unsupported}`\n"
-                        f"Errors: `{errors}`"
-                    )
-                    can_button = [[InlineKeyboardButton('Cancel Indexing', callback_data='index_cancel')]]
-                    await msg.edit_text(text=update_text, reply_markup=InlineKeyboardMarkup(can_button), parse_mode=enums.ParseMode.MARKDOWN)
-
-                # Skip empty (deleted) messages
-                if message.empty:
-                    deleted += 1
-                    continue
+                batch_start = time.time()
                 
-                # Filter for desired media types
-                if not message.media:
-                    no_media += 1
-                    continue
+                # Calculate the message IDs for the current batch (reverse order logic)
+                # The ID range runs from current + 1 up to lst_msg_id.
                 
-                supported_media = [
-                    enums.MessageMediaType.VIDEO, 
-                    enums.MessageMediaType.AUDIO, 
-                    enums.MessageMediaType.DOCUMENT
-                ]
+                # Start index for this batch (relative to the end)
+                start_offset = batch * BATCH_SIZE
+                # End index for this batch (relative to the end)
+                end_offset = min((batch + 1) * BATCH_SIZE, total_fetch)
                 
-                if message.media not in supported_media:
-                    unsupported += 1
-                    continue
-
-                # Get the media object (video, audio, or document)
-                media = getattr(message, message.media.value, None)
-                if not media:
-                    unsupported += 1
+                # Determine the actual message ID range to fetch
+                # Note: Pyrogram's get_messages takes a list of IDs. We iterate backwards.
+                
+                # The highest ID in the current batch:
+                high_id = start_id - start_offset
+                # The lowest ID in the current batch:
+                low_id = max(current + 1, start_id - end_offset + 1)
+                
+                message_ids = list(range(low_id, high_id + 1))
+                
+                if not message_ids:
+                    break # Should not happen if logic is correct, but safe break
+                
+                try:
+                    # Fetch messages in bulk
+                    messages = await bot.get_messages(chat, message_ids)
+                except Exception as e:
+                    logger.error(f"Failed to fetch batch {batch+1} in {chat}: {e}")
+                    errors += len(message_ids)
+                    total_messages_processed += len(message_ids)
                     continue
                     
-                # Prepare media object for saving
-                media.file_type = message.media.value
-                media.caption = message.caption
+                save_tasks = []
                 
-                # Save file to database
-                # Assuming save_file returns (success_bool, status_code)
-                # status_code: 1=saved, 0=duplicate, 2=error
-                success, status_code = await save_file(bot, media)
+                # Process fetched messages
+                for message in messages:
+                    # message can be None if the message ID was deleted
+                    if not message:
+                        deleted += 1
+                        total_messages_processed += 1
+                        continue
+                        
+                    try:
+                        if message.empty:
+                            deleted += 1
+                            continue
+                        elif not message.media:
+                            no_media += 1
+                            continue
+                        elif message.media not in [enums.MessageMediaType.VIDEO, enums.MessageMediaType.AUDIO, enums.MessageMediaType.DOCUMENT]:
+                            unsupported += 1
+                            continue
+                            
+                        media = getattr(message, message.media.value, None)
+                        if not media:
+                            unsupported += 1
+                            continue
+                            
+                        # Prepare media object for saving
+                        media.file_type = message.media.value
+                        media.caption = message.caption
+                        
+                        # Fix: Ensure 'bot' is passed to save_file
+                        save_tasks.append(save_file(bot, media)) 
+
+                    except Exception:
+                        errors += 1
+                        continue
                 
-                if success:
-                    total_files += 1
-                elif status_code == 0: # Duplicate file
-                    duplicate += 1
-                elif status_code == 2: # Error during saving
-                    errors += 1
+                # Run database saves concurrently for the current batch
+                results = await asyncio.gather(*save_tasks, return_exceptions=True)
                 
+                for result in results:
+                    if isinstance(result, Exception):
+                        errors += 1
+                        logger.error(f"Error during save_file: {result}")
+                    else:
+                        ok, code = result
+                        if ok:
+                            total_files += 1
+                        elif code == 0:
+                            duplicate += 1
+                        elif code == 2:
+                            errors += 1
+                            
+                # Update counters and timing
+                messages_in_batch = len(message_ids)
+                total_messages_processed += messages_in_batch
+                batch_time = time.time() - batch_start
+                batch_times.append(batch_time)
+                
+                elapsed = time.time() - start_time
+                progress = total_messages_processed
+                
+                # Calculate ETA
+                percentage = (progress / total_fetch) * 100
+                avg_batch_time = sum(batch_times) / len(batch_times)
+                eta = ((total_fetch - progress) / BATCH_SIZE) * avg_batch_time
+                
+                progress_bar_text = get_progress_bar(int(percentage))
+                
+                update_text = (
+                    f"📊 **Indexing Progress** 📦 Batch `{batch + 1}`/`{batches}`\n"
+                    f"{progress_bar_text} <code>{percentage:.1f}%</code>\n\n"
+                    f"**Stats:**\n"
+                    f"Fetched IDs: <code>{progress}</code> / <code>{total_fetch}</code>\n"
+                    f"Files Saved: <code>{total_files}</code>\n"
+                    f"Duplicates: <code>{duplicate}</code>\n"
+                    f"Errors: <code>{errors}</code>\n"
+                    f"Skipped Non-Media/Deleted: <code>{deleted + no_media + unsupported}</code>\n"
+                    f"⏱️ Elapsed: <code>{get_readable_time(elapsed)}</code>\n"
+                    f"⏰ ETA: <code>{get_readable_time(eta)}</code>"
+                )
+                
+                can_button = [[InlineKeyboardButton('Cancel Indexing', callback_data='index_cancel')]]
+                await msg.edit_text(text=update_text, reply_markup=InlineKeyboardMarkup(can_button), parse_mode=enums.ParseMode.HTML)
+            
         except FloodWait as e:
-            # Handle Pyrogram FloodWait error gracefully
             logger.warning(f"Hit FloodWait for {e.value} seconds.")
             await msg.edit_text(f"FloodWait encountered. Waiting for `{e.value}` seconds...", parse_mode=enums.ParseMode.MARKDOWN)
             await asyncio.sleep(e.value + 5)
             
         except Exception as e:
             logger.exception(f"Fatal error during indexing of chat {chat}: {e}")
-            await msg.edit_text(f'Indexing stopped due to a fatal error: `{e}`', parse_mode=enums.ParseMode.MARKDOWN)
+            await msg.edit_text(f'Indexing stopped due to a fatal error: <code>{e}</code>', parse_mode=enums.ParseMode.HTML)
             
         finally:
+            temp.CANCEL = False # Reset cancel flag
+            
             # Final summary message
             final_elapsed = time.time() - start_time
             
             final_text = (
-                f'Indexing process finished!\n'
-                f'Time taken: `{get_readable_time(final_elapsed)}`\n\n'
+                f'✅ **Indexing Completed!**\n\n'
+                f'Time taken: <code>{get_readable_time(final_elapsed)}</code>\n\n'
                 f'**Summary:**\n'
-                f'Files Saved: `{total_files}`\n'
-                f'Duplicate Files Skipped: `{duplicate}`\n'
-                f'Deleted Messages Skipped: `{deleted}`\n'
-                f'Non-Media messages skipped: `{no_media + unsupported}`\n'
-                f'Errors Occurred: `{errors}`'
+                f'Files Saved: <code>{total_files}</code>\n'
+                f'Duplicate Files Skipped: <code>{duplicate}</code>\n'
+                f'Deleted Messages Skipped: <code>{deleted}</code>\n'
+                f'Non-Media Messages Skipped: <code>{no_media + unsupported}</code>\n'
+                f'Errors Occurred: <code>{errors}</code>'
             )
-            # Only send the final summary if we didn't exit early due to the skip error
-            if start_id > temp.CURRENT:
-                await msg.edit_text(final_text, parse_mode=enums.ParseMode.MARKDOWN)
             
-            temp.CANCEL = False # Reset cancel flag
+            # Only send the final summary if we successfully indexed anything or finished normally
+            if start_id > current and not temp.CANCEL:
+                await msg.edit_text(final_text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('Close', callback_data='close_data')]]), parse_mode=enums.ParseMode.HTML)
