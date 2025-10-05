@@ -2749,9 +2749,8 @@ async def send_msg(bot, message):
 
 
 
-# Your list of camera print tags (using a set for faster lookup is good)
 camera_print_tags = {
-     # Basic CAM / Theatre / Hall captures
+    # Basic CAM / Theatre / Hall captures
     "CAM", "CAMRip", "HD-CAM", "HDCAM", "HD CAM", "HDCAMRip",
     "TS", "TSRip", "HD-TS", "HDTS", "Telesync", "HD Telesync",
     "TeleSyncRip", "TSRip", "PreDVDRip", "PDVD", "PreDVD",
@@ -2770,54 +2769,70 @@ camera_print_tags = {
 }
 
 def contains_cam_tag(filename):
-    """Checks if the filename contains any of the camera print tags (case-insensitive)."""
+    """
+    Checks if the filename contains any of the camera print tags (case-insensitive) 
+    as whole words using regex word boundaries (\b).
+    """
     for tag in camera_print_tags:
-        # \b ensures it's a whole word boundary match (e.g., 'CAM' won't match 'CAMERA')
+        # re.IGNORECASE makes the search case-insensitive.
+        # re.escape handles special characters in tags like 'HD-TS'.
         if re.search(r'\b' + re.escape(tag) + r'\b', filename, re.IGNORECASE):
             return True
     return False
 
-# NOTE: You'll need to define or import 'enums', 'InlineKeyboardButton', 'InlineKeyboardMarkup'
-# from pyrogram, and 'get_bad_files' from your database module.
+# =====================================================================
+# 2. DATABASE UTILITY (Conceptual Signature - Actual implementation needed)
+# =====================================================================
 
-@Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
+async def get_bad_files(keyword, tag_filter_func):
+    """
+    Placeholder for the database logic. 
+    It should query the database for files matching 'keyword' 
+    and then use 'tag_filter_func' (contains_cam_tag) to filter results.
+    Must return a list of files and the total count (files, total).
+    """
+    # NOTE: Replace this mock return with actual database query logic.
+    return [], 0
+
+
+# =====================================================================
+# 3. PYROGRAM HANDLER
+# (Assumes 'Client', 'filters', 'enums', 'InlineKeyboardButton', 'InlineKeyboardMarkup' are imported/available)
+# =====================================================================
+
+# The actual decorator should look like: @Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
 async def deletemultiplefiles(bot, message):
     chat_type = message.chat.type
     
-    # 1. Check if the command is run in private chat
+    # 1. Enforce Private Chat usage
     if chat_type != enums.ChatType.PRIVATE:
         return await message.reply_text(f"<b>Hey {message.from_user.mention}, This command won't work in groups. It only works on my PM!</b>")
     
-    # 2. Get the movie name/keyword from the command
+    # 2. Extract Movie Keyword
     try:
-        # 'keyword' will be the movie name provided by the admin
         keyword = message.text.split(" ", 1)[1]
     except IndexError:
         return await message.reply_text(f"<b>Hey {message.from_user.mention}, Give me the movie name to check for CAM/TS prints.</b>")
     
-    # 3. (REMOVED: The check for cam tags in the keyword itself.)
-
-    # 4. Fetch files that match the keyword AND contain camera print tags
+    # 3. Notify and Fetch Files
     k = await bot.send_message(
         chat_id=message.chat.id, 
         text=f"<b>Searching DB for CAM/TS prints of: '<code>{keyword}</code>'... Please wait...</b>"
     )
     
-    # *** ACTION REQUIRED: Your get_bad_files() function must now handle the dual filter:
-    # 1. File name/title MUST contain the 'keyword' (Movie Name).
-    # 2. File name/title MUST contain at least one tag from 'camera_print_tags'.
-    # This logic must be handled on the database/backend side.
-    
-    files, total = await get_bad_files(keyword,camera_print_tags) # Assuming get_bad_files now applies the CAM tag filter
+    # Fetch files: filtered by keyword AND containing a camera tag
+    files, total = await get_bad_files(keyword, contains_cam_tag)
     await k.delete()
     
+    # 4. Handle No Results
     if total == 0:
         return await message.reply_text(
             f"<b>✅ Success:</b> Found no files for '<code>{keyword}</code>' that contain a camera print tag (e.g., CAM, TS).",
             parse_mode=enums.ParseMode.HTML
         )
 
-    # 5. Confirmation prompt
+    # 5. Confirmation Prompt (Only if results found)
+    # NOTE: InlineKeyboardButton and InlineKeyboardMarkup must be imported from pyrogram.types
     btn = [[
         InlineKeyboardButton("⚠️ Yes, Delete All! ⚠️", callback_data=f"killfilesdq#{keyword}")
         ],[
@@ -2825,11 +2840,10 @@ async def deletemultiplefiles(bot, message):
     ]]
     
     await message.reply_text(
-        text=f"<b>Found {total} files matching '<code>{keyword}</code>' and containing camera print tags!\n\nDo you want to delete all these low-quality prints?</b>",
+        text=f"<b>Found {total} files matching '<code>{keyword}</code>' and containing camera print tags! \n\nDo you want to delete all these low-quality prints?</b>",
         reply_markup=InlineKeyboardMarkup(btn),
         parse_mode=enums.ParseMode.HTML
     )
-
 
 
 
