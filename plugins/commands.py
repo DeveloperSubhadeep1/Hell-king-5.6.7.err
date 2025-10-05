@@ -2832,7 +2832,7 @@ async def deletemultiplefiles(bot, message):
         parse_mode=enums.ParseMode.HTML
     )
     # --- END MODIFICATION ---
-    )
+    
 
 
 
