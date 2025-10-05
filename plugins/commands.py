@@ -2720,30 +2720,127 @@ async def send_msg(bot, message):
     else:
         await message.reply_text("<b>ᴜꜱᴇ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ᴀꜱ ᴀ ʀᴇᴘʟʏ ᴛᴏ ᴀɴʏ ᴍᴇꜱꜱᴀɢᴇ ᴜꜱɪɴɢ ᴛʜᴇ ᴛᴀʀɢᴇᴛ ᴄʜᴀᴛ ɪᴅ. ꜰᴏʀ ᴇɢ:  /send ᴜꜱᴇʀɪᴅ</b>")
 
+# @Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
+# async def deletemultiplefiles(bot, message):
+#     chat_type = message.chat.type
+#     if chat_type != enums.ChatType.PRIVATE:
+#         return await message.reply_text(f"<b>Hey {message.from_user.mention}, This command won't work in groups. It only works on my PM !</b>")
+#     else:
+#         pass
+#     try:
+#         keyword = message.text.split(" ", 1)[1]
+#     except:
+#         return await message.reply_text(f"<b>Hey {message.from_user.mention}, Give me a keyword along with the command to delete files.</b>")
+#     k = await bot.send_message(chat_id=message.chat.id, text=f"<b>Fetching Files for your query {keyword} on DB... Please wait...</b>")
+#     files, total = await get_bad_files(keyword)
+#     await k.delete()
+#     btn = [[
+#        InlineKeyboardButton("⚠️ Yes, Continue ! ⚠️", callback_data=f"killfilesdq#{keyword}")
+#        ],[
+#        InlineKeyboardButton("❌ No, Abort operation ! ❌", callback_data="close_data")
+#     ]]
+#     await message.reply_text(
+#         text=f"<b>Found {total} files for your query {keyword} !\n\nDo you want to delete?</b>",
+#         reply_markup=InlineKeyboardMarkup(btn),
+#         parse_mode=enums.ParseMode.HTML
+#     )
+
+
+
+
+
+# Your list of camera print tags (using a set for faster lookup is good)
+camera_print_tags = {
+     # Basic CAM / Theatre / Hall captures
+    "CAM", "CAMRip", "HD-CAM", "HDCAM", "HD CAM", "HDCAMRip",
+    "TS", "TSRip", "HD-TS", "HDTS", "Telesync", "HD Telesync",
+    "TeleSyncRip", "TSRip", "PreDVDRip", "PDVD", "PreDVD",
+    "Hall Print", "HallPrint", "HQ Hall Print", "High Quality Hall Print",
+    "S Print", "S-Print", "Screen Print", "HQ S Print", "High Quality Screen Print",
+    "Super Print", "SuperPrint", "Fine Print", "Theater Print", "Theatre Print",
+    "TheaterRip", "THRip", "TheatreRip", "HQ Print", "PrintRip",
+
+    # Audio capture mentions (common in theatre rips)
+    "Line Audio", "Clean Audio", "Mic Audio", "Hall Audio", "CAM Audio",
+    "Sync Audio", "Theatre Audio", "Original Hall Audio",
+
+    # Misc synonyms seen in naming
+    "Workprint", "PreRelease", "Pre-Theatre", "Theatrical Copy", "Cinema Print",
+    "CamHD", "CamRipHD", "HDCamRip", "HDCamX", "CamVersion", "HallCam"
+}
+
+def contains_cam_tag(filename):
+    """Checks if the filename contains any of the camera print tags (case-insensitive)."""
+    for tag in camera_print_tags:
+        # \b ensures it's a whole word boundary match (e.g., 'CAM' won't match 'CAMERA')
+        if re.search(r'\b' + re.escape(tag) + r'\b', filename, re.IGNORECASE):
+            return True
+    return False
+
+# NOTE: You'll need to define or import 'enums', 'InlineKeyboardButton', 'InlineKeyboardMarkup'
+# from pyrogram, and 'get_bad_files' from your database module.
+
 @Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
 async def deletemultiplefiles(bot, message):
     chat_type = message.chat.type
+    
+    # 1. Check if the command is run in private chat
     if chat_type != enums.ChatType.PRIVATE:
-        return await message.reply_text(f"<b>Hey {message.from_user.mention}, This command won't work in groups. It only works on my PM !</b>")
-    else:
-        pass
+        return await message.reply_text(f"<b>Hey {message.from_user.mention}, This command won't work in groups. It only works on my PM!</b>")
+    
+    # 2. Get the movie name/keyword from the command
     try:
+        # 'keyword' will be the movie name provided by the admin
         keyword = message.text.split(" ", 1)[1]
-    except:
-        return await message.reply_text(f"<b>Hey {message.from_user.mention}, Give me a keyword along with the command to delete files.</b>")
-    k = await bot.send_message(chat_id=message.chat.id, text=f"<b>Fetching Files for your query {keyword} on DB... Please wait...</b>")
-    files, total = await get_bad_files(keyword)
+    except IndexError:
+        return await message.reply_text(f"<b>Hey {message.from_user.mention}, Give me the movie name to check for CAM/TS prints.</b>")
+    
+    # 3. (REMOVED: The check for cam tags in the keyword itself.)
+
+    # 4. Fetch files that match the keyword AND contain camera print tags
+    k = await bot.send_message(
+        chat_id=message.chat.id, 
+        text=f"<b>Searching DB for CAM/TS prints of: '<code>{keyword}</code>'... Please wait...</b>"
+    )
+    
+    # *** ACTION REQUIRED: Your get_bad_files() function must now handle the dual filter:
+    # 1. File name/title MUST contain the 'keyword' (Movie Name).
+    # 2. File name/title MUST contain at least one tag from 'camera_print_tags'.
+    # This logic must be handled on the database/backend side.
+    
+    files, total = await get_bad_files(keyword) # Assuming get_bad_files now applies the CAM tag filter
     await k.delete()
+    
+    if total == 0:
+        return await message.reply_text(
+            f"<b>✅ Success:</b> Found no files for '<code>{keyword}</code>' that contain a camera print tag (e.g., CAM, TS).",
+            parse_mode=enums.ParseMode.HTML
+        )
+
+    # 5. Confirmation prompt
     btn = [[
-       InlineKeyboardButton("⚠️ Yes, Continue ! ⚠️", callback_data=f"killfilesdq#{keyword}")
-       ],[
-       InlineKeyboardButton("❌ No, Abort operation ! ❌", callback_data="close_data")
+        InlineKeyboardButton("⚠️ Yes, Delete All! ⚠️", callback_data=f"killfilesdq#{keyword}")
+        ],[
+        InlineKeyboardButton("❌ No, Abort operation! ❌", callback_data="close_data")
     ]]
+    
     await message.reply_text(
-        text=f"<b>Found {total} files for your query {keyword} !\n\nDo you want to delete?</b>",
+        text=f"<b>Found {total} files matching '<code>{keyword}</code>' and containing camera print tags!\n\nDo you want to delete all these low-quality prints?</b>",
         reply_markup=InlineKeyboardMarkup(btn),
         parse_mode=enums.ParseMode.HTML
     )
+
+
+
+
+
+
+
+
+
+
+
+
 
 @Client.on_message(filters.command("shortlink"))
 async def shortlink(bot, message):
