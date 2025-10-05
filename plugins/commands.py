@@ -2808,7 +2808,7 @@ async def deletemultiplefiles(bot, message):
     # 2. File name/title MUST contain at least one tag from 'camera_print_tags'.
     # This logic must be handled on the database/backend side.
     
-    files, total = await get_bad_files(keyword) # Assuming get_bad_files now applies the CAM tag filter
+    files, total = await get_bad_files(keyword,camera_print_tags) # Assuming get_bad_files now applies the CAM tag filter
     await k.delete()
     
     if total == 0:
