@@ -2800,7 +2800,8 @@ async def get_bad_files(keyword, tag_filter_func):
 # (Assumes 'Client', 'filters', 'enums', 'InlineKeyboardButton', 'InlineKeyboardMarkup' are imported/available)
 # =====================================================================
 
-# The actual decorator should look like: @Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
+# Corrected decorator added here
+@Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
 async def deletemultiplefiles(bot, message):
     chat_type = message.chat.type
     
