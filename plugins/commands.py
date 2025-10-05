@@ -2749,90 +2749,57 @@ async def send_msg(bot, message):
 
 
 
-
-import asyncio
-from pyrogram import Client, filters, enums
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-# Assume ADMINS is defined elsewhere
-# Assume get_bad_files(keyword) and the deletion logic (killfilesdq#...) are defined elsewhere
-
-camera_print_tags = [
-    # Basic CAM / Theatre / Hall captures 
-    "CAM", "CAMRip", "HD-CAM", "HDCAM", "HD CAM", "HDCAMRip", 
-    "TS", "TSRip", "HD-TS", "HDTS", "Telesync", "HD Telesync", 
-    "TeleSyncRip", "TSRip", "PreDVDRip", "PDVD", "PreDVD", 
-    "Hall Print", "HallPrint", "HQ Hall Print", "High Quality Hall Print", 
-    "S Print", "S-Print", "Screen Print", "HQ S Print", "High Quality Screen Print", 
-    "Super Print", "SuperPrint", "Fine Print", "Theater Print", "Theatre Print", 
-    "TheaterRip", "THRip", "TheatreRip", "HQ Print", "PrintRip", 
-
-    # Audio capture mentions (common in theatre rips) 
-    "Line Audio", "Clean Audio", "Mic Audio", "Hall Audio", "CAM Audio", 
-    "Sync Audio", "Theatre Audio", "Original Hall Audio", 
-
-    # Misc synonyms seen in naming 
-    "Workprint", "PreRelease", "Pre-Theatre", "Theatrical Copy", "Cinema Print", 
-    "CamHD", "CamRipHD", "HDCamRip", "HDCamX", "CamVersion", "HallCam" 
-]
-
 @Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
+
 async def deletemultiplefiles(bot, message):
-    chat_type = message.chat.type
-    if chat_type != enums.ChatType.PRIVATE:
-        return await message.reply_text(f"<b>Hey {message.from_user.mention}, This command won't work in groups. It only works on my PM !</b>")
 
-    # --- START MODIFICATION ---
+    chat_type = message.chat.type
 
-    # 1. Combine all tags into a single, comma-separated string for a single search or logging
-    # This assumes get_bad_files can handle the combined string, or we need to iterate.
-    # For a simple change, we'll join them, and pass this 'master keyword' to the handler.
-    # NOTE: The actual DB query (inside get_bad_files) *must* be changed to check for ANY of these tags.
-    keyword = ",".join(tag for tag in camera_print_tags)
-    
-    # 2. Inform the user about the *automatic* sweep for CAM/Print files
-    k = await bot.send_message(
-        chat_id=message.chat.id, 
-        text=f"<b>Starting automatic sweep for ALL Camera/Print files ({len(camera_print_tags)} tags) on DB... Please wait...</b>"
-    )
-    
-    # 3. Fetch all files matching ANY of the camera_print_tags
-    # get_bad_files *MUST* be updated to search for ANY tag in the camera_print_tags set.
-    # The 'keyword' passed here is just a placeholder/list for the function to use.
-    # For simplicity, we are passing the combined string, but the underlying
-    # implementation of get_bad_files should handle the set.
-    files, total = await get_bad_files(camera_print_tags) # Pass the set directly if get_bad_files is updated
-    # If get_bad_files cannot be modified, you would need a loop here:
-    # files_to_delete = set()
-    # total = 0
-    # for tag in camera_print_tags:
-    #     new_files, count = await get_bad_files(tag)
-    #     files_to_delete.update(new_files)
-    #     total = len(files_to_delete)
-    
-    await k.delete()
-    
-    if total == 0:
-        return await message.reply_text("<b>✅ No files found with Camera/Print tags. Operation finished.</b>")
+    if chat_type != enums.ChatType.PRIVATE:
 
-    # 4. Present the final confirmation with the *actual* action (deletion of CAM/Print files)
-    # Use a generic keyword like "CAM_PRINTS" for the callback data payload.
-    # The logic receiving this callback must be updated to know it's deleting ALL found files.
-    deletion_tag = "CAM_PRINTS_AUTO"
+        return await message.reply_text(f"<b>Hey {message.from_user.mention}, This command won't work in groups. It only works on my PM !</b>")
 
-    btn = [[
-        InlineKeyboardButton(f"⚠️ Yes, Delete All {total} Files ! ⚠️", callback_data=f"killfilesdq#{deletion_tag}")
-        ],[
-        InlineKeyboardButton("❌ No, Abort operation ! ❌", callback_data="close_data")
-    ]]
-    
-    await message.reply_text(
-        text=f"<b>Found {total} files with Camera/Print tags in the DB!\n\nDo you want to delete all of them?</b>",
-        reply_markup=InlineKeyboardMarkup(btn),
-        parse_mode=enums.ParseMode.HTML
-    )
-    # --- END MODIFICATION ---
-    
+    else:
+
+        pass
+
+    try:
+
+        keyword = message.text.split(" ", 1)[1]
+
+    except:
+
+        return await message.reply_text(f"<b>Hey {message.from_user.mention}, Give me a keyword along with the command to delete files.</b>")
+
+    k = await bot.send_message(chat_id=message.chat.id, text=f"<b>Fetching Files for your query {keyword} on DB... Please wait...</b>")
+
+    files, total = await get_bad_files(keyword)
+
+    await k.delete()
+
+    #await k.edit_text(f"<b>Found {total} files for your query {keyword} !\n\nFile deletion process will start in 5 seconds !</b>")
+
+    #await asyncio.sleep(5)
+
+    btn = [[
+
+       InlineKeyboardButton("⚠️ Yes, Continue ! ⚠️", callback_data=f"killfilesdq#{keyword}")
+
+       ],[
+
+       InlineKeyboardButton("❌ No, Abort operation ! ❌", callback_data="close_data")
+
+    ]]
+
+    await message.reply_text(
+
+        text=f"<b>Found {total} files for your query {keyword} !\n\nDo you want to delete?</b>",
+
+        reply_markup=InlineKeyboardMarkup(btn),
+
+        parse_mode=enums.ParseMode.HTML
+
+    )    
 
 
 
