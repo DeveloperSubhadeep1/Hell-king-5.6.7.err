@@ -2749,6 +2749,7 @@ async def send_msg(bot, message):
 
 
 
+
 camera_print_tags = {
     # Basic CAM / Theatre / Hall captures
     "CAM", "CAMRip", "HD-CAM", "HDCAM", "HD CAM", "HDCAMRip",
@@ -2877,6 +2878,28 @@ async def deletemultiplefiles(bot, message):
         reply_markup=InlineKeyboardMarkup(btn),
         parse_mode=enums.ParseMode.HTML
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
