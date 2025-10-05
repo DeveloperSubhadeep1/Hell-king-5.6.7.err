@@ -2757,7 +2757,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 # Assume ADMINS is defined elsewhere
 # Assume get_bad_files(keyword) and the deletion logic (killfilesdq#...) are defined elsewhere
 
-camera_print_tags = { 
+camera_print_tags = [
     # Basic CAM / Theatre / Hall captures 
     "CAM", "CAMRip", "HD-CAM", "HDCAM", "HD CAM", "HDCAMRip", 
     "TS", "TSRip", "HD-TS", "HDTS", "Telesync", "HD Telesync", 
@@ -2774,7 +2774,7 @@ camera_print_tags = {
     # Misc synonyms seen in naming 
     "Workprint", "PreRelease", "Pre-Theatre", "Theatrical Copy", "Cinema Print", 
     "CamHD", "CamRipHD", "HDCamRip", "HDCamX", "CamVersion", "HallCam" 
-}
+]
 
 @Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
 async def deletemultiplefiles(bot, message):
