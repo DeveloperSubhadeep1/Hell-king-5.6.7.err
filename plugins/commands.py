@@ -2806,7 +2806,6 @@ async def deletemultiplefiles(bot, message):
 
 
 
-
 @Client.on_message(filters.command("shortlink"))
 async def shortlink(bot, message):
     userid = message.from_user.id if message.from_user else None
