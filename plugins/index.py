@@ -322,7 +322,7 @@ def get_progress_bar(percent, length=10):
     
     filled = int(length * percent / 100)
     unfilled = length - filled
-    return '🟩' * filled + '⬜️' * unfilled
+    return '█' * filled + '░' * unfilled
 
 
 @Client.on_callback_query(filters.regex(r'^index'))
