@@ -2790,6 +2790,10 @@ async def get_bad_files(keyword, tag_filter_func):
     It should query the database for files matching 'keyword' 
     and then use 'tag_filter_func' (contains_cam_tag) to filter results.
     Must return a list of files and the total count (files, total).
+    
+    CRITICAL NOTE: The actual database query needs to use a 'LIKE' or 
+    regex search on the 'keyword', NOT an exact match for the entire filename.
+    e.g., SELECT * FROM files WHERE filename LIKE '%{keyword}%'
     """
     # NOTE: Replace this mock return with actual database query logic.
     return [], 0
@@ -2797,10 +2801,8 @@ async def get_bad_files(keyword, tag_filter_func):
 
 # =====================================================================
 # 3. PYROGRAM HANDLER
-# (Assumes 'Client', 'filters', 'enums', 'InlineKeyboardButton', 'InlineKeyboardMarkup' are imported/available)
 # =====================================================================
 
-# Corrected decorator added here
 @Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
 async def deletemultiplefiles(bot, message):
     chat_type = message.chat.type
@@ -2811,10 +2813,40 @@ async def deletemultiplefiles(bot, message):
     
     # 2. Extract Movie Keyword
     try:
-        keyword = message.text.split(" ", 1)[1]
+        raw_keyword = message.text.split(" ", 1)[1]
     except IndexError:
         return await message.reply_text(f"<b>Hey {message.from_user.mention}, Give me the movie name to check for CAM/TS prints.</b>")
     
+    # --- DEBUGGING AND KEYWORD SIMPLIFICATION ---
+    # The admin entered a full filename, which will likely result in 0 DB matches.
+    # We strip the full path down to a simple title guess to increase the chance of matches.
+    
+    # Try to simplify the keyword by removing common quality markers/extensions
+    keyword = re.sub(r'(\.\w{2,4})$', '', raw_keyword)  # Remove extension (.mkv)
+    keyword = re.sub(r'[\(\)\[\]]', ' ', keyword)        # Remove brackets
+    
+    # Heuristic: Find the first common quality tag and cut the string there
+    # This prevents searching for the full filename when the admin means 'The Family Star'
+    simple_keyword_list = [raw_keyword] # Start with the raw keyword
+    
+    for tag in camera_print_tags:
+        match = re.search(r'\b' + re.escape(tag) + r'\b', keyword, re.IGNORECASE)
+        if match:
+            # Cut the keyword before the first found low-quality tag
+            simple_keyword = keyword[:match.start()].strip()
+            if len(simple_keyword.split()) > 1: # Ensure it's not an empty string
+                simple_keyword_list.append(simple_keyword)
+            break 
+    
+    # Use the simplest non-empty keyword found, or the raw one if no tags were detected
+    keyword = simple_keyword_list[-1]
+    
+    if len(raw_keyword) > len(keyword) + 5: # If the original input was long and we simplified it significantly
+        await bot.send_message(
+            chat_id=message.chat.id, 
+            text=f"<b>💡 Note:</b> Your input was a full filename. Searching using the simplified keyword: '<code>{keyword}</code>'",
+        )
+
     # 3. Notify and Fetch Files
     k = await bot.send_message(
         chat_id=message.chat.id, 
@@ -2845,7 +2877,6 @@ async def deletemultiplefiles(bot, message):
         reply_markup=InlineKeyboardMarkup(btn),
         parse_mode=enums.ParseMode.HTML
     )
-
 
 
 
