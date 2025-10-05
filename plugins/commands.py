@@ -2758,22 +2758,22 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 # Assume get_bad_files(keyword) and the deletion logic (killfilesdq#...) are defined elsewhere
 
 camera_print_tags = { 
-     # Basic CAM / Theatre / Hall captures 
-     "CAM", "CAMRip", "HD-CAM", "HDCAM", "HD CAM", "HDCAMRip", 
-     "TS", "TSRip", "HD-TS", "HDTS", "Telesync", "HD Telesync", 
-     "TeleSyncRip", "TSRip", "PreDVDRip", "PDVD", "PreDVD", 
-     "Hall Print", "HallPrint", "HQ Hall Print", "High Quality Hall Print", 
-     "S Print", "S-Print", "Screen Print", "HQ S Print", "High Quality Screen Print", 
-     "Super Print", "SuperPrint", "Fine Print", "Theater Print", "Theatre Print", 
-     "TheaterRip", "THRip", "TheatreRip", "HQ Print", "PrintRip", 
+    # Basic CAM / Theatre / Hall captures 
+    "CAM", "CAMRip", "HD-CAM", "HDCAM", "HD CAM", "HDCAMRip", 
+    "TS", "TSRip", "HD-TS", "HDTS", "Telesync", "HD Telesync", 
+    "TeleSyncRip", "TSRip", "PreDVDRip", "PDVD", "PreDVD", 
+    "Hall Print", "HallPrint", "HQ Hall Print", "High Quality Hall Print", 
+    "S Print", "S-Print", "Screen Print", "HQ S Print", "High Quality Screen Print", 
+    "Super Print", "SuperPrint", "Fine Print", "Theater Print", "Theatre Print", 
+    "TheaterRip", "THRip", "TheatreRip", "HQ Print", "PrintRip", 
 
-     # Audio capture mentions (common in theatre rips) 
-     "Line Audio", "Clean Audio", "Mic Audio", "Hall Audio", "CAM Audio", 
-     "Sync Audio", "Theatre Audio", "Original Hall Audio", 
+    # Audio capture mentions (common in theatre rips) 
+    "Line Audio", "Clean Audio", "Mic Audio", "Hall Audio", "CAM Audio", 
+    "Sync Audio", "Theatre Audio", "Original Hall Audio", 
 
-     # Misc synonyms seen in naming 
-     "Workprint", "PreRelease", "Pre-Theatre", "Theatrical Copy", "Cinema Print",   
-     "CamHD", "CamRipHD", "HDCamRip", "HDCamX", "CamVersion", "HallCam" 
+    # Misc synonyms seen in naming 
+    "Workprint", "PreRelease", "Pre-Theatre", "Theatrical Copy", "Cinema Print", 
+    "CamHD", "CamRipHD", "HDCamRip", "HDCamX", "CamVersion", "HallCam" 
 }
 
 @Client.on_message(filters.command("deletefiles") & filters.user(ADMINS))
