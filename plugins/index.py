@@ -315,7 +315,7 @@ lock = asyncio.Lock()
 
 
 # Helper function to generate an emoji-based progress bar string (Updated from original)
-def get_progress_bar(percent, length=10):
+def get_progress_bar(percent, length=17):
     """Creates an emoji-based progress bar."""
     # Ensure percent is between 0 and 100
     percent = max(0, min(100, percent))
