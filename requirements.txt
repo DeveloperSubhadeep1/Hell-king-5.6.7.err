@@ -21,7 +21,7 @@ opencv-python-headless==4.8.1.78
 python-dotenv==0.21.1
 speedtest
 humanize==4.6.0
-Pillow==9.4.0
+Pillow
 psutil==5.9.4
 numpy
 wheel
@@ -45,6 +45,6 @@ fuzzywuzzy
 python-Levenshtein
 
 # Additional Tools
-googletrans==3.1.0a0
-telegraph==2.2.0
-gTTS==2.3.1
+#googletrans==3.1.0a0
+#telegraph==2.2.0
+#gTTS==2.3.1
